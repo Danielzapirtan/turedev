@@ -1,13 +1,696 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>
-      Calendar ture
-    </title>
-  </head>
-  <body>
-    <h2>
-      Calendar ture
-    </h2>
-  </body>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendar</title>
+
+  <!-- PWA manifest + theme -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+
+  <style>
+    /* Messenger prompt styles */
+    #messengerPrompt {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(to right, #0084ff, #00c4ff);
+      color: white;
+      padding: 14px 15px;
+      text-align: center;
+      z-index: 10000;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+      display: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 16px;
+    }
+    #messengerPrompt button {
+      background-color: white;
+      color: #0084ff;
+      border: none;
+      padding: 10px 20px;
+      margin-left: 15px;
+      border-radius: 24px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    #messengerPrompt button:hover {
+      background-color: #f0f8ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    }
+    #messengerPrompt button:active {
+      transform: translateY(0);
+    }
+    #closePrompt {
+      background: transparent !important;
+      color: white !important;
+      margin-left: 20px;
+      font-size: 20px;
+      padding: 5px 12px !important;
+    }
+
+    table { border-collapse: collapse; width: 100%; }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      width: 14%;
+      text-align: center;
+    }
+    th { background-color: #f2f2f2; }
+    .doy0, .doy1 { background-color: lightyellow; }
+    .doy2 { background-color: #aaffaa; }
+    .doy3 { background-color: #aaaaff; }
+    .year-btn {
+      padding: 5px 10px; margin: 0 5px; cursor: pointer;
+    }
+    .year-btn.active {
+      font-weight: bold;
+      background-color: #4CAF50;
+      color: white;
+    }
+    .controls {
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .holiday-buttons {
+      margin: 10px 0;
+      text-align: center;
+    }
+    .holiday-btn {
+      padding: 8px 15px;
+      margin: 0 5px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .holiday-btn:hover { background-color: #e0e0e0; }
+    .holiday-result {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f9f9f9;
+      color: #5555aa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: center;
+      min-height: 20px;
+    }
+    #selectedMonth {
+      font-weight: bold;
+      font-size: 24px;
+      color: #55aaaa;
+    }
+    .user-info {
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #f0f8ff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+    }
+    /* Install button styles */
+    #installButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    #installButton:hover {
+      background-color: #45a049;
+    }
+    
+    /* Adjust body padding to account for messenger prompt */
+    body {
+      padding-top: 0;
+      transition: padding-top 0.3s ease;
+    }
+    body.prompt-visible {
+      padding-top: 60px;
+    }
+    
+    /* Copy link button */
+    #copyLinkButton {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      padding: 10px 15px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    #copyLinkButton:hover {
+      background-color: #0b7dda;
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 120px;
+      right: 20px;
+      padding: 12px 20px;
+      background-color: #333;
+      color: white;
+      border-radius: 4px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Messenger Prompt -->
+  <div id="messengerPrompt">
+    <span>💡 Pentru o experiență completă, deschide în browserul extern</span>
+    <button id="openInExternalButton">Deschide acum</button>
+    <button id="closePrompt">×</button>
+  </div>
+  
+  <!-- Toast notification -->
+  <div id="toast" class="toast">Link copiat în clipboard!</div>
+  
+  <div id="userInfo" class="user-info"></div>
+  
+  <div class="controls">
+    <div id="yearButtons"></div>
+    <select id="monthSelect"></select>
+  </div>
+
+  <div class="holiday-buttons">
+    <button class="holiday-btn" onclick="checkHoliday('lless')">L&lt</button>
+    <button class="holiday-btn" onclick="checkHoliday('lcrt')">Acum</button>
+    <button class="holiday-btn" onclick="checkHoliday('lurm')">Luna urm</button>
+    <button class="holiday-btn" onclick="checkHoliday('lgrt')">L&gt</button>
+    <button class="holiday-btn" onclick="checkHoliday('paste')">Paște</button>
+    <button class="holiday-btn" onclick="checkHoliday('craciun')">Crăciun</button>
+    <button class="holiday-btn" onclick="checkHoliday('revelion')">Revelion</button>
+  </div>
+
+  <div id="holidayResult" class="holiday-result"></div>
+  <div id="selectedMonth"></div>
+  <div id="calendarContainer"></div>
+
+  <!-- Install Button -->
+  <button id="installButton">Instalează aplicația</button>
+  
+  <!-- Copy Link Button -->
+  <button id="copyLinkButton">Copiază link</button>
+
+  <script>
+    const monthNamesRo = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+    let currentYear = new Date().getFullYear();
+    let selectedYear = currentYear;
+    let selectedMonth = new Date().getMonth();
+    
+    // PWA Install Prompt variables
+    let deferredPrompt;
+    const installButton = document.getElementById('installButton');
+    const copyLinkButton = document.getElementById('copyLinkButton');
+    const toast = document.getElementById('toast');
+
+    // Function to check if we're in Messenger
+    function checkIfMessenger() {
+      // Check user agent for Facebook/Messenger in-app browser indicators
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+      const isFacebookApp = /FBAN|FBAV|FBOP|FBSN|FBSV|FBMD/i.test(ua);
+      
+      // Check for Instagram as well since it uses the same browser
+      const isInstagram = /Instagram/i.test(ua);
+      
+      // Additional check for Facebook-specific webview
+      const isFacebookWebview = ua.indexOf('FBIOS') > -1 || ua.indexOf('FB_IAB') > -1;
+      
+      return isFacebookApp || isInstagram || isFacebookWebview;
+    }
+
+    // Function to detect Huawei device
+    function isHuaweiDevice() {
+      const ua = navigator.userAgent;
+      return /Huawei|HONOR/i.test(ua) || 
+             (/\bHW\b/i.test(ua) && !/Android|iPhone|iPad/i.test(ua));
+    }
+
+    // Function to show toast notification
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Function to copy text to clipboard
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Modern approach with Clipboard API
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Link copiat în clipboard!');
+        }).catch(err => {
+          fallbackCopyText(text);
+        });
+      } else {
+        // Fallback for older browsers
+        fallbackCopyText(text);
+      }
+    }
+
+    // Fallback method for copying text
+    function fallbackCopyText(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Avoid scrolling to bottom
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+    
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+    
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('Link copiat în clipboard!');
+        } else {
+          showToast('Nu s-a putut copia link-ul. Vă rugăm copiați-l manual.');
+        }
+      } catch (err) {
+        showToast('Nu s-a putut copia link-ul. Vă rugăm copiați-l manual.');
+      }
+    
+      document.body.removeChild(textArea);
+    }
+
+    // Function to open the current URL in appropriate browser
+    function openInExternalBrowser() {
+      const currentUrl = window.location.href;
+      
+      if (isHuaweiDevice()) {
+        // For Huawei devices, we can't rely on custom URL schemes
+        // Offer to copy the link instead
+        copyToClipboard(currentUrl);
+        
+        // Try to open in default browser (may not work on all Huawei devices)
+        try {
+          window.open(currentUrl, '_system');
+        } catch (e) {
+          // This will fail on many devices, but we've already offered the copy option
+        }
+      } else {
+        // Standard Android devices with Chrome
+        // Try Android Chrome intent first
+        try {
+          window.location.href = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=http;package=com.android.chrome;end`;
+        } catch (e) {
+          console.error('Chrome intent failed:', e);
+        }
+        
+        // Fallback for other browsers
+        setTimeout(function() {
+          try {
+            window.open(`googlechrome://${window.location.host}${window.location.pathname}${window.location.search}`, '_system');
+          } catch (e) {
+            console.error('Chrome URL scheme failed:', e);
+          }
+        }, 300);
+        
+        // Final fallback: instruct user to open manually
+        setTimeout(function() {
+          copyToClipboard(currentUrl);
+        }, 1000);
+      }
+    }
+
+    // Initialize Messenger prompt
+    function initMessengerPrompt() {
+      if (checkIfMessenger()) {
+        const prompt = document.getElementById('messengerPrompt');
+        const messageSpan = prompt.querySelector('span');
+        
+        // Update message for Huawei devices
+        if (isHuaweiDevice()) {
+          messageSpan.textContent = '💡 Pentru o experiență completă, deschide în browserul extern';
+          // Show copy link button for Huawei devices
+          copyLinkButton.style.display = 'block';
+        }
+        
+        prompt.style.display = 'block';
+        document.body.classList.add('prompt-visible');
+        
+        // Add event listeners
+        document.getElementById('openInExternalButton').addEventListener('click', openInExternalBrowser);
+        document.getElementById('closePrompt').addEventListener('click', function() {
+          prompt.style.display = 'none';
+          document.body.classList.remove('prompt-visible');
+        });
+        
+        // Add event listener for copy link button
+        copyLinkButton.addEventListener('click', function() {
+          copyToClipboard(window.location.href);
+        });
+        
+        // Auto-hide after 15 seconds
+        setTimeout(() => {
+          prompt.style.display = 'none';
+          document.body.classList.remove('prompt-visible');
+        }, 15000);
+      }
+    }
+
+    function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('user')) localStorage.setItem('user', urlParams.get('user'));
+      if (urlParams.has('tura')) localStorage.setItem('tura', urlParams.get('tura'));
+      updateUserInfo();
+    }
+
+    function updateUserInfo() {
+      const storedUser = localStorage.getItem('user');
+      const storedTura = localStorage.getItem('tura');
+      const userInfoElement = document.getElementById('userInfo');
+      if (storedUser || storedTura) {
+        let info = 'Configurare: ';
+        if (storedUser) info += `Utilizator: ${storedUser} `;
+        if (storedTura) info += `Tură: ${storedTura}`;
+        userInfoElement.textContent = info;
+        userInfoElement.style.display = 'block';
+      } else {
+        userInfoElement.style.display = 'none';
+      }
+    }
+
+    function getTuraFromUrl() {
+      let tura = 4;
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("tura")) {
+        tura = parseInt(urlParams.get("tura"));
+      } else if (urlParams.has("user")) {
+        const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
+        const idx = users.indexOf(urlParams.get("user"));
+        if (idx >= 0) tura = idx + 1;
+      } else {
+        const storedTura = localStorage.getItem('tura');
+        const storedUser = localStorage.getItem('user');
+        if (storedTura) {
+          tura = parseInt(storedTura);
+        } else if (storedUser) {
+          const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
+          const idx = users.indexOf(storedUser);
+          if (idx >= 0) tura = idx + 1;
+        }
+      }
+      if (tura % 2 === 0) tura = 6 - tura;
+      return tura;
+    }
+
+    function isPWA() {
+      return window.navigator.standalone === true || 
+             window.matchMedia('(display-mode: standalone)').matches ||
+             window.matchMedia('(display-mode: fullscreen)').matches;
+    }
+
+    function createYearButtons() {
+      const yearButtonsContainer = document.getElementById('yearButtons');
+      yearButtonsContainer.innerHTML = '';
+      for (let year = currentYear - 1; year <= currentYear + 2; year++) {
+        const button = document.createElement('button');
+        button.className = 'year-btn';
+        if (year === selectedYear) button.classList.add('active');
+        button.textContent = year;
+        button.onclick = function () {
+          selectedYear = year;
+          saveToLocalStorage();
+          updateYearButtons();
+          document.getElementById("holidayResult").innerHTML = ``;
+          updateCalendar();
+        };
+        yearButtonsContainer.appendChild(button);
+      }
+    }
+
+    function updateYearButtons() {
+      const buttons = document.querySelectorAll('.year-btn');
+      buttons.forEach(button => {
+        if (parseInt(button.textContent) === selectedYear)
+          button.classList.add('active');
+        else
+          button.classList.remove('active');
+      });
+    }
+
+    function populateMonthSelect() {
+      const monthSelect = document.getElementById('monthSelect');
+      monthSelect.innerHTML = '';
+      for (let month = 0; month < 12; month++) {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = monthNamesRo[month];
+        if (month === selectedMonth) option.selected = true;
+        monthSelect.appendChild(option);
+      }
+      monthSelect.addEventListener('change', function () {
+        selectedMonth = parseInt(monthSelect.value);
+        saveToLocalStorage();
+        document.getElementById("holidayResult").innerHTML = ``;
+        updateCalendar();
+      });
+    }
+
+    function loadFromLocalStorage() {
+      const storedYear = localStorage.getItem('selectedYear');
+      const storedMonth = localStorage.getItem('selectedMonth');
+      if (storedYear) selectedYear = parseInt(storedYear);
+      if (storedMonth) selectedMonth = parseInt(storedMonth);
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('selectedYear', selectedYear);
+      localStorage.setItem('selectedMonth', selectedMonth);
+    }
+
+    function initializeControls() {
+      handleUrlParams();
+      loadFromLocalStorage();
+      createYearButtons();
+      populateMonthSelect();
+      if (!isPWA()) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const storedUser = localStorage.getItem('user');
+        const storedTura = localStorage.getItem('tura');
+        let urlChanged = false;
+        if (storedUser && !urlParams.has('user')) { urlParams.set('user', storedUser); urlChanged = true; }
+        if (storedTura && !urlParams.has('tura')) { urlParams.set('tura', storedTura); urlChanged = true; }
+        if (urlChanged) {
+          const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+          window.history.replaceState({}, '', newUrl);
+        }
+      }
+    }
+
+    function updateCalendar() {
+      const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+      const firstDay = (new Date(selectedYear, selectedMonth, 1).getDay() + 6) % 7;
+      let tura = getTuraFromUrl();
+      const date0 = new Date(2024, 0, 1);
+      let fakeDayOfYear = Math.ceil((new Date(selectedYear, selectedMonth, 1) - date0) / 86400000);
+      let html = `<table><tr><th>lun</th><th>mar</th><th>mie</th><th>joi</th><th>vin</th><th>sâm</th><th>dum</th></tr><tr>`;
+      let dayCount = 1;
+      for (let i = 0; i < 42; i++) {
+        if (i >= firstDay && dayCount <= daysInMonth) {
+          let dt = (fakeDayOfYear + tura) % 4;
+          html += `<td class="doy${dt}">${dayCount}</td>`;
+          fakeDayOfYear++; dayCount++;
+        } else {
+          html += `<td></td>`;
+        }
+        if (i % 7 === 6 && dayCount <= daysInMonth) html += `</tr><tr>`;
+        if (dayCount > daysInMonth && i % 7 === 6) break;
+      }
+      html += `</tr></table>`;
+      document.getElementById("calendarContainer").innerHTML = html;
+      document.getElementById("selectedMonth").innerHTML = `Calendar ${monthNamesRo[selectedMonth]} ${selectedYear}`;
+    }
+
+    function getEasterDate(year) {
+      const a = year % 4, b = year % 7, c = year % 19;
+      const d = (19 * c + 15) % 30;
+      const e = (2 * a + 4 * b - d + 34) % 7;
+      const month = Math.floor((d + e + 114) / 31);
+      const day = ((d + e + 114) % 31) + 1;
+      let date = new Date(year, month - 1, day);
+      date.setDate(date.getDate() + 13);
+      return date;
+    }
+
+    function getDayName(date) {
+      const days = ['duminică', 'luni', 'marți', 'miercuri', 'joi', 'vineri', 'sâmbătă'];
+      return days[date.getDay()];
+    }
+
+    function findClosestWorkShift(holidayDate, tura) {
+      const date0 = new Date(2024, 0, 1);
+      let closest = null, minDistance = Infinity;
+      for (let offset = -10; offset <= 10; offset++) {
+        let d = new Date(holidayDate);
+        d.setDate(d.getDate() + offset);
+        const daysDiff = Math.ceil((d - date0) / 86400000);
+        const shift = (daysDiff + tura) % 4;
+        if (shift === 2 || shift === 3) {
+          let dist = Math.abs(offset);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closest = {
+              date: d,
+              shift: shift === 2 ? 'de zi' : 'de noapte',
+              dayName: getDayName(d)
+            };
+          }
+        }
+      }
+      return closest;
+    }
+
+    function checkHoliday(type) {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const tura = getTuraFromUrl();
+      let date, name;
+      if (type === "lcrt") { date = new Date(); name = ''; }
+      else if (type === "lless") { date = new Date(selectedYear, selectedMonth - 1, new Date().getDate()); name = ''; }
+      else if (type === "lgrt") {
+        date = new Date(selectedYear, selectedMonth + 1, new Date().getDate());
+        if (date.getFullYear() > currentYear + 2) date = new Date(currentYear + 2, 11, new Date().getDate());
+        name = '';
+      } else if (type === "lurm") { date = new Date(currentYear, new Date().getMonth() + 1, 15); name = ''; }
+      else
+      for (let year = currentYear; year <= currentYear + 10; year++) {
+        if (type === 'paste') { date = getEasterDate(year); name = 'Paște'; }
+        else if (type === 'craciun') { date = new Date(year, 11, 25); name = 'Crăciun'; }
+        else if (type === 'revelion') { date = new Date(year, 0, 1); name = 'Revelion'; }
+        if (date > currentDate) break;
+      }
+      const closest = findClosestWorkShift(date, tura);
+      const m = monthNamesRo[closest.date.getMonth()];
+      const y = closest.date.getFullYear();
+      const d = closest.date.getDate();
+      const text = `De ${name} ${y} sunt ${closest.shift} ${closest.dayName}, ${d} ${m} ${y}`;
+      if (name) document.getElementById('holidayResult').textContent = text;
+      else document.getElementById("holidayResult").innerHTML = ``;
+      selectedYear = y;
+      selectedMonth = date.getMonth();
+      if (name) selectedMonth = closest.date.getMonth();
+      saveToLocalStorage();
+      updateYearButtons();
+      populateMonthSelect();
+      updateCalendar();
+    }
+
+    // PWA Install Prompt functionality
+    function initializePWAInstallPrompt() {
+      // Only show install prompt if not already installed as PWA
+      if (isPWA()) {
+        installButton.style.display = 'none';
+        return;
+      }
+      
+      // Listen for beforeinstallprompt event
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        
+        // Stash the event so it can be triggered later
+        deferredPrompt = e;
+        
+        // For Huawei devices, show a different message
+        if (isHuaweiDevice()) {
+          installButton.textContent = 'Adaugă la ecranul principal';
+        }
+        
+        // Show the install button
+        installButton.style.display = 'block';
+        
+        // Log that the PWA is installable
+        console.log('PWA is installable! Showing install button.');
+      });
+      
+      // Handle install button click
+      installButton.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          // The deferred prompt isn't available
+          return;
+        }
+        
+        // Show the install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        // Optionally send analytics about the user's choice
+        console.log(`User response to the install prompt: ${outcome}`);
+        
+        // We've used the prompt, and can't use it again, so clear it
+        deferredPrompt = null;
+        
+        // Hide the install button
+        installButton.style.display = 'none';
+      });
+      
+      // Listen for app installed event
+      window.addEventListener('appinstalled', () => {
+        // Hide the install button
+        installButton.style.display = 'none';
+        
+        // Clear the deferredPrompt
+        deferredPrompt = null;
+        
+        // Log a successful installation
+        console.log('PWA was installed successfully!');
+      });
+    }
+
+    window.addEventListener('load', function() {
+      initializeControls();
+      updateCalendar();
+      initializePWAInstallPrompt();
+      initMessengerPrompt(); // Initialize the Messenger prompt
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) updateUserInfo();
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register("sw.js");
+      });
+    }
+  </script>
+</body>
 </html>
