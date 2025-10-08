@@ -12,11 +12,13 @@
       padding: 8px;
       width: 14%;
       text-align: center;
+      cursor: pointer;
     }
     th { background-color: #f2f2f2; }
     .doy0, .doy1 { background-color: lightyellow; }
     .doy2 { background-color: #aaffaa; }
     .doy3 { background-color: #aaaaff; }
+    .doy4 { background-color: #ffaaaa; }
     .year-btn {
       padding: 5px 10px; margin: 0 5px; cursor: pointer;
     }
@@ -47,7 +49,6 @@
       color: #555;
     }
   </style>
-  <script src="script.js"></script>
 </head>
 
 <body>
@@ -61,5 +62,192 @@
   <div id="selectedMonth"></div>
   <div id="calendarContainer"></div>
 
+  <script>
+    const monthNamesRo = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+    let currentYear = new Date().getFullYear();
+    let selectedYear = currentYear;
+    let selectedMonth = new Date().getMonth();
+    let leaveDays = [];
+
+    function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('user')) localStorage.setItem('user', urlParams.get('user'));
+      if (urlParams.has('tura')) localStorage.setItem('tura', urlParams.get('tura'));
+      updateUserInfo();
+    }
+
+    function updateUserInfo() {
+      const storedUser = localStorage.getItem('user');
+      const storedTura = localStorage.getItem('tura');
+      const userInfoElement = document.getElementById('userInfo');
+      if (storedUser || storedTura) {
+        let info = 'Configurare: ';
+        if (storedUser) info += `Utilizator: ${storedUser} `;
+        if (storedTura) info += `Tură: ${storedTura}`;
+        userInfoElement.textContent = info;
+        userInfoElement.style.display = 'block';
+      } else {
+        userInfoElement.style.display = 'none';
+      }
+    }
+
+    function getTuraFromUrl() {
+      let tura = 4;
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("tura")) {
+        tura = parseInt(urlParams.get("tura"));
+      } else if (urlParams.has("user")) {
+        const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
+        const idx = users.indexOf(urlParams.get("user"));
+        if (idx >= 0) tura = idx + 1;
+      } else {
+        const storedTura = localStorage.getItem('tura');
+        const storedUser = localStorage.getItem('user');
+        if (storedTura) {
+          tura = parseInt(storedTura);
+        } else if (storedUser) {
+          const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
+          const idx = users.indexOf(storedUser);
+          if (idx >= 0) tura = idx + 1;
+        }
+      }
+      if (tura % 2 === 0) tura = 6 - tura;
+      return tura;
+    }
+
+    function createYearButtons() {
+      const yearButtonsContainer = document.getElementById('yearButtons');
+      yearButtonsContainer.innerHTML = '';
+      for (let year = currentYear - 1; year <= currentYear + 2; year++) {
+        const button = document.createElement('button');
+        button.className = 'year-btn';
+        if (year === selectedYear) button.classList.add('active');
+        button.textContent = year;
+        button.onclick = function () {
+          selectedYear = year;
+          saveToLocalStorage();
+          updateYearButtons();
+          updateCalendar();
+        };
+        yearButtonsContainer.appendChild(button);
+      }
+    }
+
+    function updateYearButtons() {
+      const buttons = document.querySelectorAll('.year-btn');
+      buttons.forEach(button => {
+        if (parseInt(button.textContent) === selectedYear)
+          button.classList.add('active');
+        else
+          button.classList.remove('active');
+      });
+    }
+
+    function populateMonthSelect() {
+      const monthSelect = document.getElementById('monthSelect');
+      monthSelect.innerHTML = '';
+      for (let month = 0; month < 12; month++) {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = monthNamesRo[month];
+        if (month === selectedMonth) option.selected = true;
+        monthSelect.appendChild(option);
+      }
+      monthSelect.addEventListener('change', function () {
+        selectedMonth = parseInt(monthSelect.value);
+        saveToLocalStorage();
+        updateCalendar();
+      });
+    }
+
+    function loadFromLocalStorage() {
+      const storedYear = localStorage.getItem('selectedYear');
+      const storedMonth = localStorage.getItem('selectedMonth');
+      const storedLeaveDays = localStorage.getItem('leaveDays');
+      
+      if (storedYear) selectedYear = parseInt(storedYear);
+      if (storedMonth) selectedMonth = parseInt(storedMonth);
+      if (storedLeaveDays) leaveDays = JSON.parse(storedLeaveDays);
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('selectedYear', selectedYear);
+      localStorage.setItem('selectedMonth', selectedMonth);
+      localStorage.setItem('leaveDays', JSON.stringify(leaveDays));
+    }
+
+    function initializeControls() {
+      handleUrlParams();
+      loadFromLocalStorage();
+      createYearButtons();
+      populateMonthSelect();
+    }
+
+    function toggleLeaveDay(year, month, day) {
+      const dateKey = `${year}-${month}-${day}`;
+      const index = leaveDays.indexOf(dateKey);
+      
+      if (index === -1) {
+        leaveDays.push(dateKey);
+      } else {
+        leaveDays.splice(index, 1);
+      }
+      
+      saveToLocalStorage();
+      updateCalendar();
+    }
+
+    function updateCalendar() {
+      const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+      const firstDay = (new Date(selectedYear, selectedMonth, 1).getDay() + 6) % 7;
+      let tura = getTuraFromUrl();
+      const date0 = new Date(2024, 0, 1);
+      let fakeDayOfYear = Math.ceil((new Date(selectedYear, selectedMonth, 1) - date0) / 86400000);
+      
+      let html = `<table><tr><th>lun</th><th>mar</th><th>mie</th><th>joi</th><th>vin</th><th>sâm</th><th>dum</th></tr><tr>`;
+      let dayCount = 1;
+      
+      for (let i = 0; i < 42; i++) {
+        if (i >= firstDay && dayCount <= daysInMonth) {
+          const dateKey = `${selectedYear}-${selectedMonth}-${dayCount}`;
+          const isLeaveDay = leaveDays.includes(dateKey);
+          
+          // If it's a leave day, use doy4 class, otherwise calculate normally
+          let dayClass = isLeaveDay ? 'doy4' : `doy${(fakeDayOfYear + tura) % 4}`;
+          
+          html += `<td class="${dayClass}" data-day="${dayCount}">${dayCount}</td>`;
+          fakeDayOfYear++; 
+          dayCount++;
+        } else {
+          html += `<td></td>`;
+        }
+        
+        if (i % 7 === 6 && dayCount <= daysInMonth) html += `</tr><tr>`;
+        if (dayCount > daysInMonth && i % 7 === 6) break;
+      }
+      
+      html += `</tr></table>`;
+      document.getElementById("calendarContainer").innerHTML = html;
+      document.getElementById("selectedMonth").innerHTML = `Calendar ${monthNamesRo[selectedMonth]} ${selectedYear}`;
+      
+      // Add click event listeners to all day cells
+      const dayCells = document.querySelectorAll('#calendarContainer td[data-day]');
+      dayCells.forEach(cell => {
+        cell.addEventListener('click', function() {
+          const day = parseInt(this.getAttribute('data-day'));
+          toggleLeaveDay(selectedYear, selectedMonth, day);
+        });
+      });
+    }
+
+    window.addEventListener('load', function() {
+      initializeControls();
+      updateCalendar();
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) updateUserInfo();
+    });
+  </script>
 </body>
 </html>
