@@ -870,7 +870,8 @@
         // Determine initial day type
         if (holidays.includes(day) || saturdays.includes(day) || sundays.includes(day)) {
           dayElement.classList.add("holiday");
-        } else if ((day + 7 - turaPlanner) % 4 < 2) {
+        }
+	if ((day + 7 - turaPlanner) % 4 < 2) {
           dayElement.classList.add("workday");
           totalHours += hoursPerWorkedDay;
         } else {
