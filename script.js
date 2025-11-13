@@ -396,7 +396,7 @@ const hoursPerLeaveDay = 8;
 const goalHours = 164;
 let totalHours = 0;
 let leaveDaysPlanner = 0;
-let turaPlanner = 3;
+let turaPlanner = tura;
 
 // Function to get December holidays for a specific year
 async function getDecemberHolidays(year = 2025) {
