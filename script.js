@@ -245,10 +245,10 @@ function initializeControls() {
         updatePlanner2026();
     });
     
-    document.getElementById('switch-shift-planner').addEventListener('click', () => {
+    /*document.getElementById('switch-shift-planner').addEventListener('click', () => {
         plannerShift = plannerShift === 2 ? 3 : 2;
         updatePlanner2026();
-    });
+    });*/
     
     if (!isPWA()) {
         const urlParams = new URLSearchParams(window.location.search);
