@@ -144,7 +144,7 @@ function getTuraFromUrl() {
     return tura;
 }
 
-const plannerShift = getTuraFromUrl(); // Default shift
+let plannerShift = getTuraFromUrl(); // Default shift
 
 function isPWA() {
     return window.navigator.standalone === true || 
