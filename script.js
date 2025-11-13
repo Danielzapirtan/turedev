@@ -63,6 +63,14 @@ let selectedYear = currentYear;
 let selectedMonth = new Date().getMonth();
 let leaveDays = [];
 
+// Planner 2026 variables
+let plannerYear = 2026;
+let plannerMonth = 0; // January
+let plannerShift = 2; // Default shift
+let plannerLeaveDays = [];
+let plannerWorkedDays = 0;
+let plannerTotalHours = 0;
+
 // Initialize holiday service
 const holidayService = new RomanianHolidays();
 
@@ -81,6 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
             tab.classList.add('active');
             const tabId = tab.getAttribute('data-tab');
             document.getElementById(`${tabId}-tab`).classList.add('active');
+            
+            // If switching to planner 2026, update it
+            if (tabId === 'planner2026') {
+                updatePlanner2026();
+            }
         });
     });
 });
@@ -193,12 +206,26 @@ function loadFromLocalStorage() {
     if (storedYear) selectedYear = parseInt(storedYear);
     if (storedMonth) selectedMonth = parseInt(storedMonth);
     if (storedLeaveDays) leaveDays = JSON.parse(storedLeaveDays);
+    
+    // Load planner 2026 data
+    const storedPlannerMonth = localStorage.getItem('plannerMonth');
+    const storedPlannerShift = localStorage.getItem('plannerShift');
+    const storedPlannerLeaveDays = localStorage.getItem('plannerLeaveDays');
+    
+    if (storedPlannerMonth) plannerMonth = parseInt(storedPlannerMonth);
+    if (storedPlannerShift) plannerShift = parseInt(storedPlannerShift);
+    if (storedPlannerLeaveDays) plannerLeaveDays = JSON.parse(storedPlannerLeaveDays);
 }
 
 function saveToLocalStorage() {
     localStorage.setItem('selectedYear', selectedYear);
     localStorage.setItem('selectedMonth', selectedMonth);
     localStorage.setItem('leaveDays', JSON.stringify(leaveDays));
+    
+    // Save planner 2026 data
+    localStorage.setItem('plannerMonth', plannerMonth);
+    localStorage.setItem('plannerShift', plannerShift);
+    localStorage.setItem('plannerLeaveDays', JSON.stringify(plannerLeaveDays));
 }
 
 function initializeControls() {
@@ -206,6 +233,23 @@ function initializeControls() {
     loadFromLocalStorage();
     createYearButtons();
     populateMonthSelect();
+    
+    // Initialize planner 2026 controls
+    document.getElementById('prev-month').addEventListener('click', () => {
+        plannerMonth = (plannerMonth - 1 + 12) % 12;
+        updatePlanner2026();
+    });
+    
+    document.getElementById('next-month').addEventListener('click', () => {
+        plannerMonth = (plannerMonth + 1) % 12;
+        updatePlanner2026();
+    });
+    
+    document.getElementById('switch-shift-planner').addEventListener('click', () => {
+        plannerShift = plannerShift === 2 ? 3 : 2;
+        updatePlanner2026();
+    });
+    
     if (!isPWA()) {
         const urlParams = new URLSearchParams(window.location.search);
         const storedUser = localStorage.getItem('user');
@@ -524,11 +568,199 @@ function toggleDayStatus(dayElement, day, holidays) {
     updateStats();
 }
 
+// Planner 2026 functionality
+async function updatePlanner2026() {
+    const calendar = document.getElementById("planner-2026-calendar");
+    const monthYearDisplay = document.getElementById("current-month-year");
+    const shiftDisplay = document.getElementById("shift-planner");
+    const workedDaysDisplay = document.getElementById("worked-days");
+    const leaveDaysDisplay = document.getElementById("leave-days-2026");
+    const totalHoursDisplay = document.getElementById("total-hours-2026");
+    
+    // Update display
+    monthYearDisplay.textContent = `${monthNamesRo[plannerMonth]} ${plannerYear}`;
+    shiftDisplay.textContent = plannerShift === 2 ? 'de zi' : 'de noapte';
+    
+    // Get holidays for the current month
+    const holidays = await getHolidaysForMonth(plannerYear, plannerMonth);
+    
+    // Calculate days in month
+    const daysInMonth = new Date(plannerYear, plannerMonth + 1, 0).getDate();
+    const firstDay = (new Date(plannerYear, plannerMonth, 1).getDay() + 6) % 7;
+    
+    // Reset stats
+    plannerWorkedDays = 0;
+    plannerTotalHours = 0;
+    let currentLeaveDays = 0;
+    
+    // Clear calendar
+    calendar.innerHTML = '';
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyDay = document.createElement("div");
+        emptyDay.classList.add("combined-day");
+        calendar.appendChild(emptyDay);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement("div");
+        dayElement.classList.add("combined-day");
+        
+        // Add day number
+        const dayNumber = document.createElement("div");
+        dayNumber.classList.add("day-number");
+        dayNumber.textContent = day;
+        dayElement.appendChild(dayNumber);
+        
+        // Calculate shift
+        const date0 = new Date(2017, 0, 1);
+        const currentDate = new Date(plannerYear, plannerMonth, day);
+        const daysDiff = Math.ceil((currentDate - date0) / 86400000);
+        const shift = (daysDiff + plannerShift) % 4;
+        
+        // Add shift info
+        const shiftInfo = document.createElement("div");
+        shiftInfo.classList.add("day-shift");
+        
+        let shiftText = '';
+        let isWorkDay = false;
+        
+        if (shift === 0 || shift === 1) {
+            shiftText = 'Repaus';
+            dayElement.classList.add("day-off");
+        } else if (shift === 2) {
+            shiftText = 'Zi';
+            dayElement.classList.add("workday");
+            isWorkDay = true;
+        } else if (shift === 3) {
+            shiftText = 'Noapte';
+            dayElement.classList.add("workday");
+            isWorkDay = true;
+        }
+        
+        shiftInfo.textContent = shiftText;
+        dayElement.appendChild(shiftInfo);
+        
+        // Check if holiday
+        const isHoliday = holidays.includes(day) || 
+                          currentDate.getDay() === 0 || // Sunday
+                          currentDate.getDay() === 6;   // Saturday
+        
+        if (isHoliday) {
+            dayElement.classList.add("holiday");
+        }
+        
+        // Check if leave day
+        const dateKey = `${plannerYear}-${plannerMonth}-${day}`;
+        const isLeaveDay = plannerLeaveDays.includes(dateKey);
+        
+        if (isLeaveDay) {
+            dayElement.classList.add("leave");
+            currentLeaveDays++;
+            
+            // Calculate hours for leave day
+            if (isHoliday || !isWorkDay) {
+                plannerTotalHours += 8; // 8 hours for leave on holiday/day off
+            } else {
+                plannerTotalHours += 4; // 4 hours for leave on work day
+            }
+        } else if (isWorkDay && !isHoliday) {
+            plannerWorkedDays++;
+            plannerTotalHours += 12; // 12 hours for work day
+        }
+        
+        // Add click event
+        dayElement.addEventListener('click', () => togglePlannerDay(plannerYear, plannerMonth, day));
+        
+        calendar.appendChild(dayElement);
+    }
+    
+    // Update stats
+    workedDaysDisplay.textContent = plannerWorkedDays;
+    leaveDaysDisplay.textContent = currentLeaveDays;
+    totalHoursDisplay.textContent = plannerTotalHours;
+    
+    // Save to localStorage
+    saveToLocalStorage();
+}
+
+async function getHolidaysForMonth(year, month) {
+    try {
+        const allHolidays = await holidayService.getHolidays(year);
+        if (!allHolidays) {
+            console.warn('Could not fetch holidays, using fallback');
+            // Return fallback holidays for each month
+            return getFallbackHolidays(year, month);
+        }
+        
+        // Filter holidays that are in the specified month and extract the day
+        const monthHolidays = allHolidays
+            .filter(holiday => {
+                const holidayMonth = parseInt(holiday.date.split('-')[1]);
+                return holidayMonth === month + 1; // API uses 1-based months
+            })
+            .map(holiday => parseInt(holiday.date.split('-')[2]));
+        
+        return monthHolidays;
+    } catch (error) {
+        console.error('Error getting holidays for month:', error);
+        return getFallbackHolidays(year, month);
+    }
+}
+
+function getFallbackHolidays(year, month) {
+    // Fallback holidays for Romania
+    const holidays = {
+        0: [1, 2, 24], // January: 1, 2 (Revelion), 24 (Unirea Principatelor Române)
+        3: [], // April: Easter is dynamic, will be handled separately
+        4: [1], // May: 1 (Ziua Muncii)
+        5: [1], // June: 1 (Ziua Copilului)
+        7: [15], // August: 15 (Adormirea Maicii Domnului)
+        10: [1, 30], // November: 1 (Ziua Națională), 30 (Sf. Andrei)
+        11: [1, 25, 26] // December: 1 (Ziua Națională), 25, 26 (Crăciun)
+    };
+    
+    // Add Easter for April if applicable
+    if (month === 3) {
+        const easter = getEasterDate(year);
+        if (easter.getMonth() === 3) {
+            holidays[3].push(easter.getDate());
+            holidays[3].push(easter.getDate() + 1); // Easter Monday
+        }
+    }
+    
+    // Add Easter for May if applicable (when Easter is in late April)
+    if (month === 4) {
+        const easter = getEasterDate(year);
+        if (easter.getMonth() === 3 && easter.getDate() > 25) {
+            holidays[4].push(easter.getDate() + 1); // Easter Monday
+        }
+    }
+    
+    return holidays[month] || [];
+}
+
+function togglePlannerDay(year, month, day) {
+    const dateKey = `${year}-${month}-${day}`;
+    const index = plannerLeaveDays.indexOf(dateKey);
+    
+    if (index === -1) {
+        plannerLeaveDays.push(dateKey);
+    } else {
+        plannerLeaveDays.splice(index, 1);
+    }
+    
+    updatePlanner2026();
+}
+
 // Initialize both apps
 window.addEventListener('load', function() {
     initializeControls();
     updateCalendar();
     renderPlanner();
+    updatePlanner2026();
 });
     
 document.addEventListener('visibilitychange', function() {
