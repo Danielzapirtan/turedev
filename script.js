@@ -622,7 +622,10 @@ async function updatePlanner2026() {
         const date0 = new Date(2017, 0, 1);
         const currentDate = new Date(plannerYear, plannerMonth, day);
         const daysDiff = Math.ceil((currentDate - date0) / 86400000);
-        const shift = (daysDiff + plannerShift) % 4;
+	let shift2 = plannerShift;
+	if (shift2 % 2 === 0)
+	    shift2 = 6 - shift2;
+        const shift = (daysDiff + shift2) % 4;
         
         // Add shift info
         const shiftInfo = document.createElement("div");
