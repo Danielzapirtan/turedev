@@ -248,7 +248,7 @@ function initializeControls() {
     
     document.getElementById('switch-shift-planner').addEventListener('click', () => {
         plannerShift += 1;
-	if (plannerShift == 5) {
+	if (plannerShift === 5) {
 	    plannerShift = 1;
 	}
         updatePlanner2026();
