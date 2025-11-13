@@ -666,7 +666,7 @@ async function updatePlanner2026() {
             } else {
                 plannerTotalHours += 4; // 4 hours for leave on work day
             }
-        } else if (isWorkDay && !isHoliday) {
+        } else if (isWorkDay) {
             plannerWorkedDays++;
             plannerTotalHours += 12; // 12 hours for work day
         }
