@@ -395,9 +395,8 @@ const hoursPerWorkedDay = 12;
 const hoursPerLeaveDay = 8;
 const goalHours = 164;
 let totalHours = 0;
+let tura = getTuraFromUrl();
 let leaveDaysPlanner = 0;
-let turaPlanner = tura;
-document.getElementById("shift").innerHTML = `tura ${turaPlanner}`;
 
 // Function to get December holidays for a specific year
 async function getDecemberHolidays(year = 2025) {
@@ -434,7 +433,6 @@ function updateStats() {
     
     totalHoursDisplay.textContent = totalHours;
     leaveDaysDisplay.textContent = leaveDaysPlanner;
-    document.getElementById("shift").innerHTML = `tura ${turaPlanner}`;
 }
 
 async function renderPlanner() {
@@ -454,7 +452,7 @@ async function renderPlanner() {
         
         // Determine initial day type
         const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-        const isWorkDay = ((day + 7 - turaPlanner) % 4 < 2);
+        const isWorkDay = ((day + 7 - tura) % 4 < 2);
         
         if (isHoliday) {
             dayElement.classList.add("holiday");
@@ -474,7 +472,7 @@ async function renderPlanner() {
 
 function toggleDayStatus(dayElement, day, holidays) {
   const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-  const isWorkDay = ((day + 7 - turaPlanner) % 4 < 2);
+  const isWorkDay = ((day + 7 - tura) % 4 < 2);
   if (isWorkDay) {
     if (dayElement.classList.contains("holiday")) {
       if (dayElement.classList.contains("workday")) {
@@ -531,15 +529,8 @@ window.addEventListener('load', function() {
     initializeControls();
     updateCalendar();
     renderPlanner();
-    
-    // Add event listener for shift switch in planner
-    document.getElementById("switch-shift").addEventListener("click", () => {
-        turaPlanner++;
-        if (turaPlanner === 5) turaPlanner = 1;
-        renderPlanner();
-    });
 });
-
+    
 document.addEventListener('visibilitychange', function() {
     if (!document.hidden) updateUserInfo();
 });
