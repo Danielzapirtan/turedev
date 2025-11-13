@@ -463,9 +463,6 @@ async function renderPlanner() {
             totalHours += hoursPerWorkedDay;
         } else {
             dayElement.classList.add("day-off");
-	    if (!isHoliday) {
-		totalHours += 8;
-	    }
         }
         
         dayElement.addEventListener("click", () => toggleDayStatus(dayElement, day, holidays));
@@ -477,40 +474,54 @@ async function renderPlanner() {
 function toggleDayStatus(dayElement, day, holidays) {
     const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
     const isWorkDay = (day + 7 - turaPlanner) % 4 < 2;
-    
-    if (isWorkDay) {
-        if (dayElement.classList.contains("workday")) {
-            dayElement.classList.remove("workday");
-            dayElement.classList.add("leave");
-            totalHours -= hoursPerWorkedDay;
-            leaveDaysPlanner += 1;
-        } else if (dayElement.classList.contains("leave")) {
-            dayElement.classList.remove("leave");
-            dayElement.classList.add("workday");
-            totalHours += hoursPerWorkedDay;
-            leaveDaysPlanner -= 1;
-        }
+  if (isWorkDay) {
+    if (dayElement.classList.contains("holiday")) {
+      if (dayElement.classList.contains("workday")) {
+        dayElement.classList.remove("workday");
+        dayElement.classList.add("leave");
+        totalHours -= hoursPerWorkedDay;
+        leaveDays += 1;
+      } else if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        dayElement.classList.add("workday");
+        totalHours += hoursPerWorkedDay;
+        leaveDays -= 1;
+      }
     } else {
-        if (isHoliday) {
-            if (dayElement.classList.contains("leave")) {
-                dayElement.classList.remove("leave");
-                leaveDaysPlanner -= 1;
-            } else {
-                dayElement.classList.add("leave");
-                leaveDaysPlanner += 1;
-            }
-        } else {
-            if (dayElement.classList.contains("leave")) {
-                dayElement.classList.remove("leave");
-                totalHours -= hoursPerLeaveDay;
-                leaveDaysPlanner -= 1;
-            } else {
-                dayElement.classList.add("leave");
-                totalHours += hoursPerLeaveDay;
-                leaveDaysPlanner += 1;
-            }
-        }
+      if (dayElement.classList.contains("workday")) {
+        dayElement.classList.remove("workday");
+        dayElement.classList.add("leave");
+        totalHours -= 4;
+        leaveDays += 1;
+      } else if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        dayElement.classList.add("workday");
+        totalHours += 4;
+        leaveDays -= 1;
+      }
     }
+  } else {
+    if (dayElement.classList.contains("holiday")) {
+      if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        leaveDays -= 1;
+      } else {
+        dayElement.classList.add("leave");
+        leaveDays += 1;
+      }
+    } else {
+      if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        totalHours -= 8;
+        leaveDays -= 1;
+      } else {
+        dayElement.classList.add("leave");
+        totalHours += 8;
+        leaveDays += 1;
+      }
+    }
+  }
+    
     updateStats();
 }
 
