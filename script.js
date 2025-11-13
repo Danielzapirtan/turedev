@@ -459,10 +459,14 @@ async function renderPlanner() {
             dayElement.classList.add("holiday");
         }
 	if (isWorkDay) {
-            dayElement.classList.add("workday");
+	    if (!isHoliday) {
+                dayElement.classList.add("workday");
+	    }
             totalHours += hoursPerWorkedDay;
         } else {
-            dayElement.classList.add("day-off");
+	    if (!isHoliday) {
+               dayElement.classList.add("day-off");
+	    }
         }
         
         dayElement.addEventListener("click", () => toggleDayStatus(dayElement, day, holidays));
