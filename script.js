@@ -459,7 +459,7 @@ async function renderPlanner() {
             dayElement.classList.add("holiday");
 	    dayElement.classList.remove("workday");
 	    dayElement.classList.remove("day-off");
-	    if (isHoliday) {
+	    if (isWorkDay) {
                  totalHours += hoursPerWorkedDay;
 	    }
         } else if (isWorkDay) {
