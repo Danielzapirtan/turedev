@@ -453,7 +453,7 @@ async function renderPlanner() {
         
         // Determine initial day type
         const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-        const isWorkDay = (day + 7 - turaPlanner) % 4 < 2;
+        const isWorkDay = ((day + 7 - turaPlanner) % 4 < 2);
         
         if (isHoliday) {
             dayElement.classList.add("holiday");
