@@ -463,6 +463,9 @@ async function renderPlanner() {
             totalHours += hoursPerWorkedDay;
         } else {
             dayElement.classList.add("day-off");
+	    if (!isHoliday) {
+		totalHours += 8;
+	    }
         }
         
         dayElement.addEventListener("click", () => toggleDayStatus(dayElement, day, holidays));
