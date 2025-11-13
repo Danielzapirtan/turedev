@@ -457,6 +457,8 @@ async function renderPlanner() {
         
         if (isHoliday) {
             dayElement.classList.add("holiday");
+	    dayElement.classList.remove("workday");
+	    dayElement.classList.remove("day-off");
 	    if (isHoliday) {
                  totalHours += hoursPerWorkedDay;
 	    }
