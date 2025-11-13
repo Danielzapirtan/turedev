@@ -1,148 +1,200 @@
-const monthNamesRo = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
-let currentYear = new Date().getFullYear();
-let selectedYear = currentYear;
-let selectedMonth = new Date().getMonth();
+class RomanianHolidays {
+    constructor() {
+        this.baseUrl = 'https://date.nager.at/api/v3';
+    }
 
-function handleUrlParams() {
-	const urlParams = new URLSearchParams(window.location.search);
-	if (urlParams.has('user')) localStorage.setItem('user', urlParams.get('user'));
-	if (urlParams.has('tura')) localStorage.setItem('tura', urlParams.get('tura'));
-	updateUserInfo();
+    // Get all holidays for a year
+    async getHolidays(year = new Date().getFullYear()) {
+        try {
+            const response = await fetch(`${this.baseUrl}/PublicHolidays/${year}/RO`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching holidays:', error);
+            return null;
+        }
+    }
+
+    // Check if a specific date is a holiday
+    async isHoliday(date = new Date()) {
+        const year = date.getFullYear();
+        const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        const holidays = await this.getHolidays(year);
+        if (!holidays) return false;
+
+        return holidays.some(holiday => holiday.date === dateString);
+    }
+
+    // Get upcoming holidays
+    async getUpcomingHolidays(count = 5) {
+        const currentYear = new Date().getFullYear();
+        const holidays = await this.getHolidays(currentYear);
+        
+        if (!holidays) return [];
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        return holidays
+            .filter(holiday => holiday.date >= today)
+            .slice(0, count);
+    }
+
+    // Get holidays for multiple years
+    async getHolidaysRange(startYear, endYear) {
+        const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+        const promises = years.map(year => this.getHolidays(year));
+        
+        try {
+            const results = await Promise.all(promises);
+            return results.flat();
+        } catch (error) {
+            console.error('Error fetching holiday range:', error);
+            return null;
+        }
+    }
 }
 
-function updateUserInfo() {
-	const storedUser = localStorage.getItem('user');
-	const storedTura = localStorage.getItem('tura');
-	const userInfoElement = document.getElementById('userInfo');
-	if (storedUser || storedTura) {
-		let info = 'Configurare: ';
-		if (storedUser) info += `Utilizator: ${storedUser} `;
-		if (storedTura) info += `Tură: ${storedTura}`;
-		userInfoElement.textContent = info;
-		userInfoElement.style.display = 'block';
-	} else {
-		userInfoElement.style.display = 'none';
-	}
+const daysInDecember = 31;
+// Remove hardcoded holidays and calculate them dynamically
+let holidays = [];
+const saturdays = [6, 13, 20, 27];
+const sundays = [7, 14, 21, 28];
+const normalDayshifts = [4, 8, 12, 16, 20, 24, 28];
+const normalNightshifts = [1, 5, 9, 13, 17, 21, 25, 29];
+const hoursPerWorkedDay = 12;
+const hoursPerLeaveDay = 8;
+const goalHours = 164;
+let totalHours = 0;
+let leaveDays = 0;
+const calendar = document.querySelector(".calendar");
+const totalHoursDisplay = document.getElementById("total-hours");
+const leaveDaysDisplay = document.getElementById("leave-days");
+let tura = 3;
+
+// Initialize holiday service
+const holidayService = new RomanianHolidays();
+
+// Function to get December holidays for a specific year
+async function getDecemberHolidays(year = 2025) {
+    try {
+        const allHolidays = await holidayService.getHolidays(year);
+        if (!allHolidays) {
+            console.warn('Could not fetch holidays, using fallback');
+            return [1, 25, 26]; // Fallback to hardcoded values
+        }
+        
+        // Filter holidays that are in December and extract the day
+        const decemberHolidays = allHolidays
+            .filter(holiday => {
+                const month = parseInt(holiday.date.split('-')[1]);
+                return month === 12;
+            })
+            .map(holiday => parseInt(holiday.date.split('-')[2]));
+        
+        console.log('December holidays:', decemberHolidays);
+        return decemberHolidays;
+    } catch (error) {
+        console.error('Error getting December holidays:', error);
+        return [1, 25, 26]; // Fallback to hardcoded values
+    }
 }
 
-function getTuraFromUrl() {
-	let tura = 4;
-	const urlParams = new URLSearchParams(window.location.search);
-	if (urlParams.has("tura")) {
-		tura = parseInt(urlParams.get("tura"));
-	} else if (urlParams.has("user")) {
-		const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
-		const idx = users.indexOf(urlParams.get("user"));
-		if (idx >= 0) tura = idx + 1;
-	} else {
-		const storedTura = localStorage.getItem('tura');
-		const storedUser = localStorage.getItem('user');
-		if (storedTura) {
-			tura = parseInt(storedTura);
-		} else if (storedUser) {
-			const users = ["ljc1q", "xxtoo", "fras0", "l3hb4"];
-			const idx = users.indexOf(storedUser);
-			if (idx >= 0) tura = idx + 1;
-		}
-	}
-	if (tura % 2 === 0) tura = 6 - tura;
-	return tura;
+async function updateHolidays() {
+    holidays = await getDecemberHolidays(2025);
 }
 
-function createYearButtons() {
-	const yearButtonsContainer = document.getElementById('yearButtons');
-	yearButtonsContainer.innerHTML = '';
-	for (let year = currentYear - 1; year <= currentYear + 2; year++) {
-		const button = document.createElement('button');
-		button.className = 'year-btn';
-		if (year === selectedYear) button.classList.add('active');
-		button.textContent = year;
-		button.onclick = function () {
-			selectedYear = year;
-			saveToLocalStorage();
-			updateYearButtons();
-			updateCalendar();
-		};
-		yearButtonsContainer.appendChild(button);
-	}
+function updateStats() {
+  totalHoursDisplay.textContent = totalHours;
+  leaveDaysDisplay.textContent = leaveDays;
+  document.getElementById("shift").innerHTML = `tura ${tura}`;
 }
 
-function updateYearButtons() {
-	const buttons = document.querySelectorAll('.year-btn');
-	buttons.forEach(button => {
-		if (parseInt(button.textContent) === selectedYear)
-			button.classList.add('active');
-		else
-			button.classList.remove('active');
-	});
+async function render() {
+  // Update holidays before rendering
+  await updateHolidays();
+  
+  calendar.innerHTML = ``;
+  totalHours = 0;
+  for (let day = 1; day <= daysInDecember; day++) {
+    const dayElement = document.createElement("div");
+    dayElement.classList.add("day");
+    dayElement.textContent = day;
+    if (
+      holidays.includes(day) ||
+      saturdays.includes(day) ||
+      sundays.includes(day)
+    ) {
+      dayElement.classList.add("holiday");
+    }
+    if ((day + 7 - tura) % 4 < 2) {
+      dayElement.classList.add("workday");
+      totalHours += hoursPerWorkedDay;
+    }
+    dayElement.addEventListener("click", () =>
+      toggleDayStatus(dayElement, day)
+    );
+    calendar.appendChild(dayElement);
+  }
+  updateStats();
 }
 
-function populateMonthSelect() {
-	const monthSelect = document.getElementById('monthSelect');
-	monthSelect.innerHTML = '';
-	for (let month = 0; month < 12; month++) {
-		const option = document.createElement('option');
-		option.value = month;
-		option.textContent = monthNamesRo[month];
-		if (month === selectedMonth) option.selected = true;
-		monthSelect.appendChild(option);
-	}
-	monthSelect.addEventListener('change', function () {
-		selectedMonth = parseInt(monthSelect.value);
-		saveToLocalStorage();
-		updateCalendar();
-	});
-}
-
-function loadFromLocalStorage() {
-	const storedYear = localStorage.getItem('selectedYear');
-	const storedMonth = localStorage.getItem('selectedMonth');
-	if (storedYear) selectedYear = parseInt(storedYear);
-	if (storedMonth) selectedMonth = parseInt(storedMonth);
-}
-
-function saveToLocalStorage() {
-	localStorage.setItem('selectedYear', selectedYear);
-	localStorage.setItem('selectedMonth', selectedMonth);
-}
-
-function initializeControls() {
-	handleUrlParams();
-	loadFromLocalStorage();
-	createYearButtons();
-	populateMonthSelect();
-}
-
-function updateCalendar() {
-	const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-	const firstDay = (new Date(selectedYear, selectedMonth, 1).getDay() + 6) % 7;
-	let tura = getTuraFromUrl();
-	const date0 = new Date(2024, 0, 1);
-	let fakeDayOfYear = Math.ceil((new Date(selectedYear, selectedMonth, 1) - date0) / 86400000);
-	let html = `<table><tr><th>lun</th><th>mar</th><th>mie</th><th>joi</th><th>vin</th><th>sâm</th><th>dum</th></tr><tr>`;
-	let dayCount = 1;
-	for (let i = 0; i < 42; i++) {
-		if (i >= firstDay && dayCount <= daysInMonth) {
-			let dt = (fakeDayOfYear + tura) % 4;
-			html += `<td class="doy${dt}">${dayCount}</td>`;
-			fakeDayOfYear++; dayCount++;
-		} else {
-			html += `<td></td>`;
-		}
-		if (i % 7 === 6 && dayCount <= daysInMonth) html += `</tr><tr>`;
-		if (dayCount > daysInMonth && i % 7 === 6) break;
-	}
-	html += `</tr></table>`;
-	document.getElementById("calendarContainer").innerHTML = html;
-	document.getElementById("selectedMonth").innerHTML = `Calendar ${monthNamesRo[selectedMonth]} ${selectedYear}`;
-}
-
-window.addEventListener('load', function() {
-	initializeControls();
-	updateCalendar();
+document.getElementById("switch-shift").addEventListener("click", () => {
+  tura++;
+  if (tura === 5) tura = 1;
+  render();
 });
 
-document.addEventListener('visibilitychange', function() {
-	if (!document.hidden) updateUserInfo();
-});
+// Initialize and render
+render();
 
+function toggleDayStatus(dayElement, day) {
+  if ((day + 7 - tura) % 4 < 2) {
+    if (dayElement.classList.contains("holiday")) {
+      if (dayElement.classList.contains("workday")) {
+        dayElement.classList.remove("workday");
+        dayElement.classList.add("leave");
+        totalHours -= hoursPerWorkedDay;
+        leaveDays += 1;
+      } else if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        dayElement.classList.add("workday");
+        totalHours += hoursPerWorkedDay;
+        leaveDays -= 1;
+      }
+    } else {
+      if (dayElement.classList.contains("workday")) {
+        dayElement.classList.remove("workday");
+        dayElement.classList.add("leave");
+        totalHours -= 4;
+        leaveDays += 1;
+      } else if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        dayElement.classList.add("workday");
+        totalHours += 4;
+        leaveDays -= 1;
+      }
+    }
+  } else {
+    if (dayElement.classList.contains("holiday")) {
+      if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        leaveDays -= 1;
+      } else {
+        dayElement.classList.add("leave");
+        leaveDays += 1;
+      }
+    } else {
+      if (dayElement.classList.contains("leave")) {
+        dayElement.classList.remove("leave");
+        totalHours -= 8;
+        leaveDays -= 1;
+      } else {
+        dayElement.classList.add("leave");
+        totalHours += 8;
+        leaveDays += 1;
+      }
+    }
+  }
+  updateStats();
+}
