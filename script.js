@@ -395,7 +395,7 @@ const hoursPerWorkedDay = 12;
 const hoursPerLeaveDay = 8;
 const goalHours = 164;
 let totalHours = 0;
-let tura = getTuraFromUrl();
+const tura = getTuraFromUrl();
 let leaveDaysPlanner = 0;
 
 // Function to get December holidays for a specific year
