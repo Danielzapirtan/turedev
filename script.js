@@ -246,10 +246,13 @@ function initializeControls() {
         updatePlanner2026();
     });
     
-    /*document.getElementById('switch-shift-planner').addEventListener('click', () => {
-        plannerShift = plannerShift === 2 ? 3 : 2;
+    document.getElementById('switch-shift-planner').addEventListener('click', () => {
+        plannerShift += 1;
+	if (plannerShift == 5) {
+	    plannerShift = 1;
+	}
         updatePlanner2026();
-    });*/
+    });
     
     if (!isPWA()) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -580,7 +583,7 @@ async function updatePlanner2026() {
     
     // Update display
     monthYearDisplay.textContent = `${monthNamesRo[plannerMonth]} ${plannerYear}`;
-    shiftDisplay.textContent = plannerShift === 2 ? 'de zi' : 'de noapte';
+    shiftDisplay.textContent = plannerShift;
     
     // Get holidays for the current month
     const holidays = await getHolidaysForMonth(plannerYear, plannerMonth);
