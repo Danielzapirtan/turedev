@@ -472,52 +472,52 @@ async function renderPlanner() {
 }
 
 function toggleDayStatus(dayElement, day, holidays) {
-    const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-    const isWorkDay = (day + 7 - turaPlanner) % 4 < 2;
+  const isHoliday = holidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
+  const isWorkDay = ((day + 7 - turaPlanner) % 4 < 2);
   if (isWorkDay) {
     if (dayElement.classList.contains("holiday")) {
       if (dayElement.classList.contains("workday")) {
         dayElement.classList.remove("workday");
         dayElement.classList.add("leave");
         totalHours -= hoursPerWorkedDay;
-        leaveDays += 1;
+        leaveDaysPlanner += 1;
       } else if (dayElement.classList.contains("leave")) {
         dayElement.classList.remove("leave");
         dayElement.classList.add("workday");
         totalHours += hoursPerWorkedDay;
-        leaveDays -= 1;
+        leaveDaysPlanner -= 1;
       }
     } else {
       if (dayElement.classList.contains("workday")) {
         dayElement.classList.remove("workday");
         dayElement.classList.add("leave");
         totalHours -= 4;
-        leaveDays += 1;
+        leaveDaysPlanner += 1;
       } else if (dayElement.classList.contains("leave")) {
         dayElement.classList.remove("leave");
         dayElement.classList.add("workday");
         totalHours += 4;
-        leaveDays -= 1;
+        leaveDaysPlanner -= 1;
       }
     }
   } else {
     if (dayElement.classList.contains("holiday")) {
       if (dayElement.classList.contains("leave")) {
         dayElement.classList.remove("leave");
-        leaveDays -= 1;
+        leaveDaysPlanner -= 1;
       } else {
         dayElement.classList.add("leave");
-        leaveDays += 1;
+        leaveDaysPlanner += 1;
       }
     } else {
       if (dayElement.classList.contains("leave")) {
         dayElement.classList.remove("leave");
         totalHours -= 8;
-        leaveDays -= 1;
+        leaveDaysPlanner -= 1;
       } else {
         dayElement.classList.add("leave");
         totalHours += 8;
-        leaveDays += 1;
+        leaveDaysPlanner += 1;
       }
     }
   }
