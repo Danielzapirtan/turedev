@@ -66,7 +66,6 @@ let leaveDays = [];
 // Planner 2026 variables
 let plannerYear = 2026;
 let plannerMonth = 0; // January
-let plannerShift = getTuraFromUrl(); // Default shift
 let plannerLeaveDays = [];
 let plannerWorkedDays = 0;
 let plannerTotalHours = 0;
@@ -144,6 +143,8 @@ function getTuraFromUrl() {
     if (tura % 2 === 0) tura = 6 - tura;
     return tura;
 }
+
+const plannerShift = getTuraFromUrl(); // Default shift
 
 function isPWA() {
     return window.navigator.standalone === true || 
