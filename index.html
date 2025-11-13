@@ -319,6 +319,85 @@
     .tab-content.active {
       display: block;
     }
+    
+    /* Combined Planner Styles */
+    .combined-planner {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .combined-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .month-navigation {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .nav-btn {
+      padding: 5px 10px;
+      background-color: var(--secondary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .combined-stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 15px 0;
+    }
+    
+    .combined-calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    
+    .combined-day {
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .day-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .day-shift {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    
+    .combined-day.workday {
+      background-color: var(--workday-color);
+    }
+    
+    .combined-day.day-off {
+      background-color: var(--day-off-color);
+    }
+    
+    .combined-day.holiday {
+      background-color: var(--holiday-color);
+    }
+    
+    .combined-day.leave {
+      background-color: var(--leave-color);
+    }
   </style>
 </head>
 
@@ -333,6 +412,7 @@
       <div class="tabs">
         <div class="tab active" data-tab="calendar">Calendar</div>
         <div class="tab" data-tab="planner">Planificator Concedii</div>
+        <div class="tab" data-tab="planner2026">Planificator Concedii 2026</div>
       </div>
     </div>
     
@@ -401,6 +481,64 @@
           <div class="legend-item">
             <div class="legend-color" style="background-color: var(--day-off-color);"></div>
             <span>Repaus</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Planner 2026 Section -->
+      <div class="section tab-content" id="planner2026-tab">
+        <div class="section-title">Planificator Concedii 2026</div>
+        
+        <div class="combined-planner">
+          <div class="combined-controls">
+            <div class="month-navigation">
+              <button class="nav-btn" id="prev-month">&lt;</button>
+              <span id="current-month-year">Ianuarie 2026</span>
+              <button class="nav-btn" id="next-month">&gt;</button>
+            </div>
+            <div class="shift-controls">
+              <span>Tură: </span>
+              <span id="shift-planner">de zi</span>
+              <button id="switch-shift-planner">Schimbă tura</button>
+            </div>
+          </div>
+          
+          <div class="combined-stats">
+            <div class="stat-item">
+              <div>Zile Lucrate</div>
+              <div class="stat-value" id="worked-days">0</div>
+            </div>
+            <div class="stat-item">
+              <div>Zile Concediu</div>
+              <div class="stat-value" id="leave-days-2026">0</div>
+            </div>
+            <div class="stat-item">
+              <div>Ore Total</div>
+              <div class="stat-value" id="total-hours-2026">0</div>
+            </div>
+          </div>
+          
+          <div class="combined-calendar" id="planner-2026-calendar">
+            <!-- Days will be dynamically inserted here by JavaScript -->
+          </div>
+          
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: var(--workday-color);"></div>
+              <span>Zi lucrată</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: var(--holiday-color);"></div>
+              <span>Sărbătoare/Weekend</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: var(--leave-color);"></div>
+              <span>Concediu</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: var(--day-off-color);"></div>
+              <span>Repaus</span>
+            </div>
           </div>
         </div>
       </div>
