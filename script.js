@@ -66,7 +66,7 @@ let leaveDays = [];
 // Planner 2026 variables
 let plannerYear = 2026;
 let plannerMonth = 0; // January
-let plannerShift = 2; // Default shift
+let plannerShift = getTuraFromUrl(); // Default shift
 let plannerLeaveDays = [];
 let plannerWorkedDays = 0;
 let plannerTotalHours = 0;
