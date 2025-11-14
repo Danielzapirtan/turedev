@@ -486,14 +486,6 @@
       <div class="section planner-section tab-content" id="planner-tab">
         <div class="section-title">Planificator Concedii Decembrie 2025</div>
         
-	<!--
-        <div class="solution-controls">
-          <button id="solve-btn" class="solve-btn">Rezolvă</button>
-          <button id="reset-btn" class="solve-btn" style="background-color: #FF9800;">Resetează</button>
-        </div>
-        
-        <div id="solve-feedback" class="feedback"></div>
-	-->
         <div class="planner-calendar">
           <!-- Days will be dynamically inserted here by JavaScript -->
         </div>
@@ -551,7 +543,6 @@
             <div class="shift-controls">
               <span>Tură: </span>
               <span id="shift-planner">3</span>
-              <button id="switch-shift-planner">Schimbă tura</button>
             </div>
           </div>
           
@@ -750,6 +741,7 @@
     }
 
     let plannerShift = getTuraFromUrl(); // Default shift
+    document.getElementById("shift-planner").textcontent = plannerShift;
 
     function isPWA() {
         return window.navigator.standalone === true || 
@@ -851,18 +843,6 @@
             updatePlanner2026();
         });
         
-        document.getElementById('switch-shift-planner').addEventListener('click', () => {
-            plannerShift += 1;
-        if (plannerShift === 5) {
-            plannerShift = 1;
-        }
-            updatePlanner2026();
-        });
-        
-/*        // Initialize solution button
-        document.getElementById('solve-btn').addEventListener('click', findSolution);
-        document.getElementById('reset-btn').addEventListener('click', resetSolution);
-  */      
         if (!isPWA()) {
             const urlParams = new URLSearchParams(window.location.search);
             const storedUser = localStorage.getItem('user');
@@ -1111,7 +1091,7 @@
             
             // Determine initial day type
             const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-            const isWorkDay = ((day + 7 - tura) % 4 < 2);
+            const isWorkDay = ((day + 7 - plannerShift) % 4 < 2);
             
             if (isHoliday) {
                 dayElement.classList.add("holiday");
@@ -1131,7 +1111,7 @@
 
     function toggleDayStatus(dayElement, day) {
       const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-      const isWorkDay = ((day + 7 - tura) % 4 < 2);
+      const isWorkDay = ((day + 7 - plannerShift) % 4 < 2);
       if (isWorkDay) {
         if (dayElement.classList.contains("holiday")) {
           if (dayElement.classList.contains("workday")) {
@@ -1183,126 +1163,6 @@
         updateStats();
     }
 
-/*
-    // Solution finding functionality
-    function findSolution() {
-        if (isSolving) {
-            cancelSolution();
-            return;
-        }
-        
-        isSolving = true;
-        document.getElementById('solve-btn').textContent = 'Anulează';
-        document.getElementById('solve-feedback').textContent = 'Așteptați...';
-        
-        // Start with 1 day trial
-        trySolution(1, 1000);
-    }
-
-    function cancelSolution() {
-        isSolving = false;
-        document.getElementById('solve-btn').textContent = 'Rezolvă';
-        document.getElementById('solve-feedback').textContent = 'Anulat de utilizator';
-        
-        if (solutionTimeout) {
-            clearTimeout(solutionTimeout);
-            solutionTimeout = null;
-        }
-    }
-
-    function trySolution(daysToToggle, timeout) {
-        if (!isSolving) return;
-        
-        const startTime = Date.now();
-        const endTime = startTime + timeout;
-        
-        function attempt() {
-            if (!isSolving) return;
-            
-            if (Date.now() > endTime) {
-                // Time's up, try next level
-                if (daysToToggle < 3) {
-                    trySolution(daysToToggle + 1, daysToToggle === 1 ? 5000 : 10000);
-                } else {
-                    // No solution found
-                    isSolving = false;
-                    document.getElementById('solve-btn').textContent = 'Rezolvă';
-                    document.getElementById('solve-feedback').textContent = 'Nu s-a găsit nicio soluție';
-                }
-                return;
-            }
-            
-            // Generate random days to toggle
-            const workDays = [];
-            for (let day = 1; day <= daysInDecember; day++) {
-                const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-                const isWorkDay = ((day + 7 - tura) % 4 < 2);
-                
-                if (isWorkDay && !isHoliday) {
-                    workDays.push(day);
-                }
-            }
-            
-            // Shuffle work days and pick the required number
-            const shuffled = [...workDays].sort(() => 0.5 - Math.random());
-            const daysToChange = shuffled.slice(0, daysToToggle);
-            
-            // Calculate new total hours if we toggle these days
-            let newTotalHours = totalHours;
-            
-            daysToChange.forEach(day => {
-                const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-                const isCurrentlyLeave = dayElement.classList.contains("leave");
-                
-                if (isCurrentlyLeave) {
-                    // Toggling from leave to workday
-                    newTotalHours += 4; // Add 4 hours back
-                } else {
-                    // Toggling from workday to leave
-                    newTotalHours -= 4; // Remove 4 hours
-                }
-            });
-            
-            // Check if this is a solution
-            if (newTotalHours === goalHours) {
-                // Found a solution!
-                isSolving = false;
-                document.getElementById('solve-btn').textContent = 'Rezolvă';
-                document.getElementById('solve-feedback').textContent = `Soluție găsită cu ${daysToToggle} zile modificate`;
-                
-                // Apply the solution
-                currentSolution = daysToChange;
-                applySolution(daysToChange);
-                return;
-            }
-            
-            // Try next attempt
-            solutionTimeout = setTimeout(attempt, 10);
-        }
-        
-        attempt();
-    }
-
-    function applySolution(daysToChange) {
-        daysToChange.forEach(day => {
-            const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-            toggleDayStatus(dayElement, day);
-            dayElement.classList.add("solution");
-        });
-        
-        updateStats();
-    }
-
-    function resetSolution() {
-        // Remove solution highlighting
-        document.querySelectorAll('.planner-calendar .day.solution').forEach(day => {
-            day.classList.remove("solution");
-        });
-        
-        document.getElementById('solve-feedback').textContent = '';
-        currentSolution = null;
-    }
-*/
     // Planner 2026 functionality
     async function updatePlanner2026() {
         const calendar = document.getElementById("planner-2026-calendar");
@@ -1314,6 +1174,10 @@
         
         // Update display
         monthYearDisplay.textContent = `${monthNamesRo[plannerMonth]} ${plannerYear}`;
+	plannerShift = getTuraFromUrl();
+	if (plannerShift % 2 === 0) {
+	    plannerShift = 6 - plannerShift;
+        }
         shiftDisplay.textContent = plannerShift;
         
         // Get holidays for the current month

@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://danielzapirtan.github.io/ture/$1",
+      "permanent": true
+    }
+  ]
+}
