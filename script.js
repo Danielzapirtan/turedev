@@ -620,7 +620,7 @@
             
             if (Date.now() > endTime) {
                 // Time's up, try next level
-                if (daysToToggle < 3) {
+		    if (daysToToggle > 1) {
                     trySolution(daysToToggle - 1, daysToToggle === 8 ? 5000 : 10000);
                 } else {
                     // No solution found
