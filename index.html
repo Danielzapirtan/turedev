@@ -1255,7 +1255,9 @@
 
           if (isLeaveDay) {
             dayElement.classList.add("leave");
-            currentLeaveDays++;
+            if (!isHoliday) {
+              currentLeaveDays++;
+            }
 
             // Calculate hours for leave day
             if (!isHoliday && !isWorkDay) {
