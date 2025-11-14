@@ -621,7 +621,7 @@
             if (Date.now() > endTime) {
                 // Time's up, try next level
 		    if (daysToToggle > 1) {
-                    trySolution(daysToToggle - 1, daysToToggle === 8 ? 5000 : 10000);
+                    trySolution(daysToToggle - 1, 5000);
                 } else {
                     // No solution found
                     isSolving = false;
@@ -645,24 +645,17 @@
             // Shuffle work days and pick the required number
             //const shuffled = [...workDays].sort(() => 0.5 - Math.random());
             //const daysToChange = shuffled.slice(0, daysToToggle);
-            const startDay = parseInt((daysInDecember - daysToToggle) * Math.random() + 1);
+            const startDay = 1 + Math.round((daysInDecember - daysToToggle) * Math.random());
 	    const daysToChange = [];
-	    for (let day = startDay; day < startDay + daysToToggle; day++)
+	    for (let day = startDay; day < startDay + daysToToggle; day++) {
 		daysToChange.push(day);
+	    }
             // Calculate new total hours if we toggle these days
             let newTotalHours = totalHours;
             
             daysToChange.forEach(day => {
                 const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-                const isCurrentlyLeave = dayElement.classList.contains("leave");
-                
-                if (isCurrentlyLeave) {
-                    // Toggling from leave to workday
-                    newTotalHours += 4; // Add 4 hours back
-                } else {
-                    // Toggling from workday to leave
-                    newTotalHours -= 4; // Remove 4 hours
-                }
+		toggleDayStatus(dayElement, day);
             });
             
             // Check if this is a solution
