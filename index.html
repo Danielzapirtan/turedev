@@ -1291,6 +1291,7 @@
         // Remove solution highlighting
         document.querySelectorAll('.planner-calendar .day.solution').forEach(day => {
             day.classList.remove("solution");
+	    day.classList.remove("leave");
         });
         
         document.getElementById('solve-feedback').textContent = '';
