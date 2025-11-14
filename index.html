@@ -438,6 +438,23 @@
       color: #9C27B0;
       min-height: 20px;
     }
+    
+    /* New styles for consecutive days control */
+    .consecutive-control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .consecutive-control input {
+      width: 60px;
+      padding: 5px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
   </style>
 </head>
 
@@ -485,6 +502,11 @@
       <!-- Planner Section -->
       <div class="section planner-section tab-content" id="planner-tab">
         <div class="section-title">Planificator Concedii Decembrie 2025</div>
+        
+        <div class="consecutive-control">
+          <label for="consecutive-days">Zile consecutive de concediu:</label>
+          <input type="number" id="consecutive-days" min="1" max="10" value="3">
+        </div>
         
         <div class="solution-controls">
           <button id="solve-btn" class="solve-btn">Rezolvă</button>
@@ -1182,7 +1204,7 @@
         updateStats();
     }
 
-    // Solution finding functionality
+    // Solution finding functionality - MODIFIED
     function findSolution() {
         if (isSolving) {
             cancelSolution();
@@ -1193,8 +1215,14 @@
         document.getElementById('solve-btn').textContent = 'Anulează';
         document.getElementById('solve-feedback').textContent = 'Așteptați...';
         
-        // Start with 1 day trial
-        trySolution(1, 1000);
+        // Get the number of consecutive days from the input
+        const consecutiveDays = parseInt(document.getElementById('consecutive-days').value);
+        
+        // Reset all leave days before starting
+        resetAllLeaveDays();
+        
+        // Start solution search
+        trySolutionWithConsecutiveDays(consecutiveDays, 5000);
     }
 
     function cancelSolution() {
@@ -1208,7 +1236,34 @@
         }
     }
 
-    function trySolution(daysToToggle, timeout) {
+    function resetAllLeaveDays() {
+        // Remove all leave days
+        document.querySelectorAll('.planner-calendar .day.leave').forEach(day => {
+            day.classList.remove("leave");
+            if (day.classList.contains("workday")) {
+                day.classList.add("workday");
+            }
+        });
+        
+        // Reset stats
+        totalHours = 0;
+        leaveDaysPlanner = 0;
+        
+        // Recalculate total hours
+        for (let day = 1; day <= daysInDecember; day++) {
+            const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
+            const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
+            const isWorkDay = ((day + 7 - tura) % 4 < 2);
+            
+            if (isWorkDay) {
+                totalHours += hoursPerWorkedDay;
+            }
+        }
+        
+        updateStats();
+    }
+
+    function trySolutionWithConsecutiveDays(consecutiveDays, timeout) {
         if (!isSolving) return;
         
         const startTime = Date.now();
@@ -1218,59 +1273,66 @@
             if (!isSolving) return;
             
             if (Date.now() > endTime) {
-                // Time's up, try next level
-                if (daysToToggle < 3) {
-                    trySolution(daysToToggle + 1, daysToToggle === 1 ? 5000 : 10000);
-                } else {
-                    // No solution found
-                    isSolving = false;
-                    document.getElementById('solve-btn').textContent = 'Rezolvă';
-                    document.getElementById('solve-feedback').textContent = 'Nu s-a găsit nicio soluție';
-                }
+                // Time's up, no solution found
+                isSolving = false;
+                document.getElementById('solve-btn').textContent = 'Rezolvă';
+                document.getElementById('solve-feedback').textContent = 'Nu s-a găsit nicio soluție';
                 return;
             }
             
-            // Generate random days to toggle
-            const workDays = [];
-            for (let day = 1; day <= daysInDecember; day++) {
-                const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-                const isWorkDay = ((day + 7 - tura) % 4 < 2);
+            // Generate a random starting position for consecutive leave days
+            const possibleStarts = [];
+            for (let startDay = 1; startDay <= daysInDecember - consecutiveDays + 1; startDay++) {
+                // Check if all days in this range are work days
+                let allWorkDays = true;
+                for (let i = 0; i < consecutiveDays; i++) {
+                    const day = startDay + i;
+                    const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
+                    const isWorkDay = ((day + 7 - tura) % 4 < 2);
+                    
+                    if (!isWorkDay || isHoliday) {
+                        allWorkDays = false;
+                        break;
+                    }
+                }
                 
-                if (isWorkDay && !isHoliday) {
-                    workDays.push(day);
+                if (allWorkDays) {
+                    possibleStarts.push(startDay);
                 }
             }
             
-            // Shuffle work days and pick the required number
-            const shuffled = [...workDays].sort(() => 0.5 - Math.random());
-            const daysToChange = shuffled.slice(0, daysToToggle);
+            if (possibleStarts.length === 0) {
+                // No valid consecutive work days found
+                isSolving = false;
+                document.getElementById('solve-btn').textContent = 'Rezolvă';
+                document.getElementById('solve-feedback').textContent = 'Nu s-a găsit nicio secvență de zile lucrătoare consecutive';
+                return;
+            }
             
-            // Calculate new total hours if we toggle these days
+            // Pick a random starting position
+            const randomStart = possibleStarts[Math.floor(Math.random() * possibleStarts.length)];
+            
+            // Calculate new total hours if we set these days as leave
             let newTotalHours = totalHours;
             
-            daysToChange.forEach(day => {
-                const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-                const isCurrentlyLeave = dayElement.classList.contains("leave");
-                
-                if (isCurrentlyLeave) {
-                    // Toggling from leave to workday
-                    newTotalHours += 4; // Add 4 hours back
-                } else {
-                    // Toggling from workday to leave
-                    newTotalHours -= 4; // Remove 4 hours
-                }
-            });
+            for (let i = 0; i < consecutiveDays; i++) {
+                const day = randomStart + i;
+                newTotalHours -= 4; // Each work day converted to leave reduces hours by 4
+            }
             
             // Check if this is a solution
             if (newTotalHours === goalHours) {
                 // Found a solution!
                 isSolving = false;
                 document.getElementById('solve-btn').textContent = 'Rezolvă';
-                document.getElementById('solve-feedback').textContent = `Soluție găsită cu ${daysToToggle} zile modificate`;
+                document.getElementById('solve-feedback').textContent = `Soluție găsită cu ${consecutiveDays} zile consecutive de concediu`;
                 
                 // Apply the solution
-                currentSolution = daysToChange;
-                applySolution(daysToChange);
+                currentSolution = [];
+                for (let i = 0; i < consecutiveDays; i++) {
+                    currentSolution.push(randomStart + i);
+                }
+                applySolution(currentSolution);
                 return;
             }
             
