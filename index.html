@@ -670,11 +670,11 @@
     let plannerWorkedDays = 0;
     let plannerTotalHours = 0;
 
-    // Solution variables
+/*    // Solution variables
     let isSolving = false;
     let currentSolution = null;
     let solutionTimeout = null;
-
+*/
     // Initialize holiday service
     const holidayService = new RomanianHolidays();
 
@@ -859,10 +859,10 @@
             updatePlanner2026();
         });
         
-        // Initialize solution button
+/*        // Initialize solution button
         document.getElementById('solve-btn').addEventListener('click', findSolution);
         document.getElementById('reset-btn').addEventListener('click', resetSolution);
-        
+  */      
         if (!isPWA()) {
             const urlParams = new URLSearchParams(window.location.search);
             const storedUser = localStorage.getItem('user');
@@ -1183,6 +1183,7 @@
         updateStats();
     }
 
+/*
     // Solution finding functionality
     function findSolution() {
         if (isSolving) {
@@ -1301,7 +1302,7 @@
         document.getElementById('solve-feedback').textContent = '';
         currentSolution = null;
     }
-
+*/
     // Planner 2026 functionality
     async function updatePlanner2026() {
         const calendar = document.getElementById("planner-2026-calendar");
