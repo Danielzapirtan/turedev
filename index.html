@@ -1254,7 +1254,55 @@
             
             daysToChange.forEach(day => {
                 const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-		toggleDayStatus(dayElement, day);
+      const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
+      const isWorkDay = ((day + 7 - tura) % 4 < 2);
+      if (isWorkDay) {
+        if (dayElement.classList.contains("holiday")) {
+          if (dayElement.classList.contains("workday")) {
+            dayElement.classList.remove("workday");dd
+            dayElement.classList.add("leave");
+            newTotalHours -= hoursPerWorkedDay;
+            leaveDaysPlanner += 1;
+          } else if (dayElement.classList.contains("leave")) {
+            dayElement.classList.remove("leave");
+            dayElement.classList.add("workday");
+            newTotalHours += hoursPerWorkedDay;
+            leaveDaysPlanner -= 1;
+          }
+        } else {
+          if (dayElement.classList.contains("workday")) {
+            dayElement.classList.remove("workday");
+            dayElement.classList.add("leave");
+            newTotalHours -= 4;
+            leaveDaysPlanner += 1;
+          } else if (dayElement.classList.contains("leave")) {
+            dayElement.classList.remove("leave");
+            dayElement.classList.add("workday");
+            newTotalHours += 4;
+            leaveDaysPlanner -= 1;
+          }
+        }
+      } else {
+        if (dayElement.classList.contains("holiday")) {
+          if (dayElement.classList.contains("leave")) {
+            dayElement.classList.remove("leave");
+            leaveDaysPlanner -= 1;
+          } else {
+            dayElement.classList.add("leave");
+            leaveDaysPlanner += 1;
+          }
+        } else {
+          if (dayElement.classList.contains("leave")) {
+            dayElement.classList.remove("leave");
+            newTotalHours -= 8;
+            leaveDaysPlanner -= 1;
+          } else {
+            dayElement.classList.add("leave");
+            newTotalHours += 8;
+            leaveDaysPlanner += 1;
+          }
+        }
+      }
             });
             
             // Check if this is a solution
@@ -1280,7 +1328,6 @@
     function applySolution(daysToChange) {
         daysToChange.forEach(day => {
             const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-            toggleDayStatus(dayElement, day);
             dayElement.classList.add("solution");
         });
         
@@ -1289,9 +1336,8 @@
 
     function resetSolution() {
         // Remove solution highlighting
-        document.querySelectorAll('.planner-calendar').forEach(day => {
+        document.querySelectorAll('.planner-calendar.solution').forEach(day => {
             day.classList.remove("solution");
-	    day.classList.remove("leave");
         });
         
         document.getElementById('solve-feedback').textContent = '';
