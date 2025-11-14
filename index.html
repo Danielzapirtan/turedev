@@ -1194,7 +1194,7 @@
         document.getElementById('solve-feedback').textContent = 'Așteptați...';
         
         // Start with 1 day trial
-        trySolution(1, 1000);
+        trySolution(9, 1000);
     }
 
     function cancelSolution() {
@@ -1220,7 +1220,7 @@
             if (Date.now() > endTime) {
                 // Time's up, try next level
                 if (daysToToggle < 3) {
-                    trySolution(daysToToggle + 1, daysToToggle === 1 ? 5000 : 10000);
+                    trySolution(daysToToggle - 1, daysToToggle === 8 ? 5000 : 10000);
                 } else {
                     // No solution found
                     isSolving = false;
@@ -1242,9 +1242,12 @@
             }
             
             // Shuffle work days and pick the required number
-            const shuffled = [...workDays].sort(() => 0.5 - Math.random());
-            const daysToChange = shuffled.slice(0, daysToToggle);
-            
+            //const shuffled = [...workDays].sort(() => 0.5 - Math.random());
+            //const daysToChange = shuffled.slice(0, daysToToggle);
+            const startDay = parseInt((daysInDecember - daysToToggle) * Math.random() + 1);
+	    const daysToChange = [];
+	    for (let day = startDay; day < startDay + daysToToggle; day++)
+		daysToChange.push(day);
             // Calculate new total hours if we toggle these days
             let newTotalHours = totalHours;
             
