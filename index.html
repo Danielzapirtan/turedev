@@ -1113,12 +1113,10 @@
               dayElement.classList.remove("workday");
               dayElement.classList.add("leave");
               totalHours -= hoursPerWorkedDay;
-              leaveDaysPlanner += 1;
             } else if (dayElement.classList.contains("leave")) {
               dayElement.classList.remove("leave");
               dayElement.classList.add("workday");
               totalHours += hoursPerWorkedDay;
-              leaveDaysPlanner -= 1;
             }
           } else {
             if (dayElement.classList.contains("workday")) {
