@@ -1194,7 +1194,7 @@
         document.getElementById('solve-feedback').textContent = 'Așteptați...';
         
         // Start with 1 day trial
-        trySolution(9, 1000);
+        trySolution(1, 1000);
     }
 
     function cancelSolution() {
@@ -1219,8 +1219,8 @@
             
             if (Date.now() > endTime) {
                 // Time's up, try next level
-		    if (daysToToggle > 1) {
-                    trySolution(daysToToggle - 1, 5000);
+                if (daysToToggle < 3) {
+                    trySolution(daysToToggle + 1, daysToToggle === 1 ? 5000 : 10000);
                 } else {
                     // No solution found
                     isSolving = false;
@@ -1242,67 +1242,23 @@
             }
             
             // Shuffle work days and pick the required number
-            //const shuffled = [...workDays].sort(() => 0.5 - Math.random());
-            //const daysToChange = shuffled.slice(0, daysToToggle);
-            const startDay = 1 + Math.round((daysInDecember - daysToToggle) * Math.random());
-	    const daysToChange = [];
-	    for (let day = startDay; day < startDay + daysToToggle; day++) {
-		daysToChange.push(day);
-	    }
+            const shuffled = [...workDays].sort(() => 0.5 - Math.random());
+            const daysToChange = shuffled.slice(0, daysToToggle);
+            
             // Calculate new total hours if we toggle these days
             let newTotalHours = totalHours;
             
             daysToChange.forEach(day => {
                 const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
-      const isHoliday = decemberHolidays.includes(day) || saturdays.includes(day) || sundays.includes(day);
-      const isWorkDay = ((day + 7 - tura) % 4 < 2);
-      if (isWorkDay) {
-        if (dayElement.classList.contains("holiday")) {
-          if (dayElement.classList.contains("workday")) {
-            dayElement.classList.remove("workday");dd
-            dayElement.classList.add("leave");
-            newTotalHours -= hoursPerWorkedDay;
-            leaveDaysPlanner += 1;
-          } else if (dayElement.classList.contains("leave")) {
-            dayElement.classList.remove("leave");
-            dayElement.classList.add("workday");
-            newTotalHours += hoursPerWorkedDay;
-            leaveDaysPlanner -= 1;
-          }
-        } else {
-          if (dayElement.classList.contains("workday")) {
-            dayElement.classList.remove("workday");
-            dayElement.classList.add("leave");
-            newTotalHours -= 4;
-            leaveDaysPlanner += 1;
-          } else if (dayElement.classList.contains("leave")) {
-            dayElement.classList.remove("leave");
-            dayElement.classList.add("workday");
-            newTotalHours += 4;
-            leaveDaysPlanner -= 1;
-          }
-        }
-      } else {
-        if (dayElement.classList.contains("holiday")) {
-          if (dayElement.classList.contains("leave")) {
-            dayElement.classList.remove("leave");
-            leaveDaysPlanner -= 1;
-          } else {
-            dayElement.classList.add("leave");
-            leaveDaysPlanner += 1;
-          }
-        } else {
-          if (dayElement.classList.contains("leave")) {
-            dayElement.classList.remove("leave");
-            newTotalHours -= 8;
-            leaveDaysPlanner -= 1;
-          } else {
-            dayElement.classList.add("leave");
-            newTotalHours += 8;
-            leaveDaysPlanner += 1;
-          }
-        }
-      }
+                const isCurrentlyLeave = dayElement.classList.contains("leave");
+                
+                if (isCurrentlyLeave) {
+                    // Toggling from leave to workday
+                    newTotalHours += 4; // Add 4 hours back
+                } else {
+                    // Toggling from workday to leave
+                    newTotalHours -= 4; // Remove 4 hours
+                }
             });
             
             // Check if this is a solution
@@ -1328,6 +1284,7 @@
     function applySolution(daysToChange) {
         daysToChange.forEach(day => {
             const dayElement = document.querySelector(`.planner-calendar .day:nth-child(${day})`);
+            toggleDayStatus(dayElement, day);
             dayElement.classList.add("solution");
         });
         
@@ -1336,7 +1293,7 @@
 
     function resetSolution() {
         // Remove solution highlighting
-        document.querySelectorAll('.planner-calendar.solution').forEach(day => {
+        document.querySelectorAll('.planner-calendar .day.solution').forEach(day => {
             day.classList.remove("solution");
         });
         
