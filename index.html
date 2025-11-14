@@ -1289,7 +1289,7 @@
 
     function resetSolution() {
         // Remove solution highlighting
-        document.querySelectorAll('.planner-calendar .day.solution').forEach(day => {
+        document.querySelectorAll('.planner-calendar').forEach(day => {
             day.classList.remove("solution");
 	    day.classList.remove("leave");
         });
