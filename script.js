@@ -822,7 +822,7 @@ async function optimizeLeaveDays() {
       }
     }
     
-    const refDate = new Date(1998, 0, 0);
+    const refDate = new Date(refYear, 0, 0);
     let best = [-Infinity, -Infinity];
     let bestChoice = [-1, -1];
     
